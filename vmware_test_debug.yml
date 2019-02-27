@@ -1,0 +1,10 @@
+- name: Test Debug 
+  hosts: localhost
+  gather_facts: no
+  tasks:
+  - name: Output vCenter details
+    debug:
+        msg: 
+        - "my vCenter:      {{ vcenter_hostname }}"
+        - "my Username:     {{ vcenter_username }}"
+        - "my Password:     {{ vcenter_password }}" # Do not in Production!!
