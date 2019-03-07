@@ -1,8 +1,8 @@
-- name: Test Create VM 
+- name: Create VM 
   hosts: localhost
   gather_facts: no
   tasks:
-    - name: Create a virtual machine on given ESXi hostname
+    - name: Create a new CentOS VM
       vmware_guest:
             hostname: "{{ vcenter_hostname }}"
             username: "{{ vcenter_username }}"
@@ -22,7 +22,11 @@
               memory_mb: 256
               num_cpus: 1
               scsi: paravirtual
+              boot_firmware: efi
             networks:
             - name: "DPortGroup2"
               device_type: vmxnet3
+            customvalues:
+            - key: "svga.vgaOnly"
+              Value: true
       register: deploy_vm
