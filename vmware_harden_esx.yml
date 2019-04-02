@@ -19,7 +19,7 @@
         cluster_name: "{{ cluster_name }}"
         validate_certs: no
       tags: debug
-    - name: Gather firewall facts about all ESXi Host in given Cluster
+    - name: Get Firewall Rules
       vmware_host_firewall_facts:
         hostname: '{{ vcenter_hostname }}'
         username: '{{ vcenter_username }}'
@@ -83,7 +83,7 @@
         cluster_name: "{{ cluster_name }}"
         validate_certs: no
         state: present  
-    - name: Manage multiple rule set for an ESXi Host
+    - name: Manage Firewall Rules
       vmware_host_firewall_manager:
         hostname: '{{ vcenter_hostname }}'
         username: '{{ vcenter_username }}'
