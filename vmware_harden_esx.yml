@@ -8,7 +8,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
       tags: debug
     - name: Get Advanced Options
@@ -16,7 +16,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
       tags: debug
     - name: Get Firewall Rules
@@ -24,7 +24,7 @@
         hostname: '{{ vcenter_hostname }}'
         username: '{{ vcenter_username }}'
         password: '{{ vcenter_password }}'
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
       tags: debug
     - name: Set Advanced Options
@@ -32,7 +32,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
         options:
             "UserVars.ESXiShellInteractiveTimeOut": 900
@@ -50,7 +50,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
         service_name: ntpd
         state: present
@@ -60,7 +60,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
         service_name: TSM-SSH
         state: absent
@@ -70,7 +70,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
         service_name: TSM
         state: absent
@@ -80,7 +80,7 @@
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}"
+        cluster_name: "cluster01"  
         validate_certs: no
         state: present  
     - name: Manage Firewall Rules
@@ -88,7 +88,7 @@
         hostname: '{{ vcenter_hostname }}'
         username: '{{ vcenter_username }}'
         password: '{{ vcenter_password }}'
-        cluster_name: "{{ cluster_name }}"  
+        cluster_name: "cluster01"    
         validate_certs: no      
         rules:
           - name: dhcp 
@@ -99,3 +99,4 @@
             enabled: False
           - name: snmp 
             enabled: False
+
