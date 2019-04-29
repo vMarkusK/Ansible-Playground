@@ -1,10 +1,17 @@
 - name: Create VM 
   hosts: localhost
   gather_facts: no
+  strategy: free
   vars:
     vmname_list:  
-      - { name: 'alice', datastore: 'datastore1', network: 'DPortGroup2' }
-      - { name: 'bob', datastore: 'datastore1', network: 'DPortGroup2' }
+      - { name: 'vm01', datastore: 'datastore1', network: 'DPortGroup1' }
+      - { name: 'vm02', datastore: 'datastore1', network: 'DPortGroup2' }
+      - { name: 'vm03', datastore: 'datastore1', network: 'DPortGroup1' }
+      - { name: 'vm04', datastore: 'datastore1', network: 'DPortGroup2' }
+      - { name: 'vm11', datastore: 'datastore1', network: 'DPortGroup1' }
+      - { name: 'vm12', datastore: 'datastore1', network: 'DPortGroup2' }
+      - { name: 'vm13', datastore: 'datastore1', network: 'DPortGroup1' }
+      - { name: 'vm14', datastore: 'datastore1', network: 'DPortGroup2' }
   tasks:
     - name: Debug
       debug:
