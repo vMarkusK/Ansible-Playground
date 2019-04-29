@@ -1,0 +1,41 @@
+- name: Create VM 
+  hosts: localhost
+  gather_facts: no
+  vars:
+    vmname_list:  
+      - { name: 'alice', datastore: 'datastore1', network: 'DPortGroup2' }
+      - { name: 'bob', datastore: 'datastore1', network: 'DPortGroup2' }
+  tasks:
+    - name: Debug
+      debug:
+        var: "{{ item }}"
+      with_items :  "{{ vmname_list }}"
+      tags: debug
+    - name: Create a new CentOS VM
+      vmware_guest:
+            hostname: "{{ vcenter_hostname }}"
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+            validate_certs: no
+            datacenter: lab
+            cluster: cluster01
+            folder: /lab/vm/
+            name: "{{ item.name }}"
+            state: poweredoff
+            guest_id: centos64Guest
+            datastore: "{{ item.datastore }}"
+            disk:
+            - size_gb: 10
+              type: thin
+            hardware:
+              memory_mb: 256
+              num_cpus: 1
+              scsi: paravirtual
+              boot_firmware: efi
+            networks:
+            - name: "{{ item.network }}"
+              device_type: vmxnet3
+            customvalues:
+            - key: "svga.vgaOnly"
+              Value: true
+      with_items :  "{{ vmname_list }}"      
