@@ -1,19 +1,15 @@
 - name: Create VM 
   hosts: localhost
   gather_facts: no
-  strategy: free
   vars:
+    vmcluster: Cluster01
+    vmdatacenter: lab
+    vmfolder: /lab/vm/
     vmname_list:  
-      - { name: 'vm01', datastore: 'datastore1', network: 'DPortGroup1' }
-      - { name: 'vm02', datastore: 'datastore1', network: 'DPortGroup2' }
-      - { name: 'vm03', datastore: 'datastore1', network: 'DPortGroup1' }
-      - { name: 'vm04', datastore: 'datastore1', network: 'DPortGroup2' }
-      - { name: 'vm11', datastore: 'datastore1', network: 'DPortGroup1' }
-      - { name: 'vm12', datastore: 'datastore1', network: 'DPortGroup2' }
-      - { name: 'vm13', datastore: 'datastore1', network: 'DPortGroup1' }
-      - { name: 'vm14', datastore: 'datastore1', network: 'DPortGroup2' }
+      - { name: 'vm01', datastore: 'datastore1', network: 'DPortGroup1', cpu: '1', mem: '256' }
+      - { name: 'vm02', datastore: 'datastore1', network: 'DPortGroup2', cpu: '1', mem: '256' }
   tasks:
-    - name: Debug
+    - name: Debug input list (loop)
       debug:
         var: "{{ item }}"
       with_items :  "{{ vmname_list }}"
@@ -24,9 +20,9 @@
             username: "{{ vcenter_username }}"
             password: "{{ vcenter_password }}"
             validate_certs: no
-            datacenter: lab
-            cluster: cluster01
-            folder: /lab/vm/
+            datacenter: "{{ vmdatacenter }}"
+            cluster: "{{ vmcluster }}"
+            folder: "{{ vmfolder }}"
             name: "{{ item.name }}"
             state: poweredoff
             guest_id: centos64Guest
@@ -35,8 +31,8 @@
             - size_gb: 10
               type: thin
             hardware:
-              memory_mb: 256
-              num_cpus: 1
+              memory_mb: "{{ item.mem }}"
+              num_cpus: "{{ item.cpu }}"
               scsi: paravirtual
               boot_firmware: efi
             networks:
@@ -45,4 +41,10 @@
             customvalues:
             - key: "svga.vgaOnly"
               Value: true
-      with_items :  "{{ vmname_list }}"      
+      register: vmdeploy_list
+      with_items:  "{{ vmname_list }}"
+    - name: Debug result list
+      debug:
+        var: "{{ vmdeploy_list }}"
+      tags: debug
+      
