@@ -4,7 +4,7 @@
   vars:
     vmcluster: Cluster01
     vmdatacenter: lab
-    vmfolder: /lab/vm/
+    vmfolder: /{{ vmdatacenter }}/vm/Ansible
     vmname_list:  
       - { name: 'vm01', datastore: 'datastore1', network: 'DPortGroup1', cpu: '1', mem: '256' }
       - { name: 'vm02', datastore: 'datastore1', network: 'DPortGroup2', cpu: '1', mem: '256' }
