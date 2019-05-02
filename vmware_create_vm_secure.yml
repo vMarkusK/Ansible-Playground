@@ -1,4 +1,4 @@
-- name: Create a VM from Scratch
+- name: Create a VM with security configuration
   hosts: localhost
   gather_facts: no
   tasks:
@@ -10,7 +10,7 @@
         vm_name: test_vm_01
         vm_datastore: datastore1
         network_name: DPortGroup1
-  - name: Check for exisiting VM with same name
+  - name: Check for exisiting VM with same name 
     vmware_guest_facts:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
@@ -23,7 +23,7 @@
   - fail:
       msg: "The VM already exists."
     when: vm_find is succeeded 
-  - name: Create a new VM
+  - name: Create new VM - {{ vm_name }}
     vmware_guest:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
@@ -65,7 +65,7 @@
             value: "False"
         wait_for_ip_address: no
     register: vm_deploy
-  - name: Set VM CPU Reservation
+  - name: Set VM CPU Reservation for {{ vm_name }}
     vmware_guest:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
@@ -78,7 +78,7 @@
       hardware:
         cpu_reservation: "{{ (vm_deploy.instance.hw_processor_count *  256)  | int }}"
       wait_for_ip_address: no
-  - name: Set VM RAM Reservation
+  - name: Set VM RAM Reservation for {{ vm_name }}
     vmware_guest:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
@@ -91,7 +91,7 @@
       hardware:
         memory_reservation: "{{ (vm_deploy.instance.hw_memtotal_mb / 2)  | int }}"
       wait_for_ip_address: no
-  - name: Enable SecureBoot
+  - name: Enable UEFI SecureBoot for {{ vm_name }}
     vmware_guest_boot_manager:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
