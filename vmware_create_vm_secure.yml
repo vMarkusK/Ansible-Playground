@@ -4,46 +4,42 @@
   tasks:
   - name: Define Facts
     set_fact:
-        vm_name: "test_vm_1001"
-        vm_datastore: "SAN_RZ1"
-        vm_group: "VM_RZ1"
-        network_name: "VM Access"
-  - name: Find VM
+        vm_datacenter: lab
+        vm_cluster: cluster01
+        vm_folder: /lab/vm/
+        vm_name: test_vm_01
+        vm_datastore: datastore1
+        network_name: DPortGroup1
+  - name: Check for exisiting VM with same name
     vmware_guest_facts:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
       password: "{{ vcenter_password }}"
-      datacenter: "{{ datacenter_name }}"
+      datacenter: "{{ vm_datacenter }}"
       validate_certs: no
       name: "{{ vm_name }}"
     ignore_errors: True
     register: vm_find
-    tags: test
-  - name: "VM Object"
-    debug: 
-      msg: "{{ vm_find }}"
-    tags: test
   - fail:
-      msg: "The system already exists."
+      msg: "The VM already exists."
     when: vm_find is succeeded 
-    tags: test
-  - name: Create a VM
+  - name: Create a new VM
     vmware_guest:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
-        datacenter: "{{ datacenter_name }}"
-        cluster: "{{ cluster_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        cluster: "{{ vm_cluster }}"
         validate_certs: no
-        folder: "{{ folder_root }}"
+        folder: "{{ vm_folder }}"
         name: "{{ vm_name }}" 
-        state: poweredon
-        guest_id: centos64Guest
+        state: poweredoff
+        guest_id: rhel7_64Guest
         datastore: "{{ vm_datastore }}"
         disk:
           - size_gb: 10
         hardware:
-            memory_mb: 512
+            memory_mb: 256
             num_cpus: 1
             scsi: paravirtual
             boot_firmware: efi
@@ -68,39 +64,38 @@
           - key: "tools.guestlib.enableHostInfo"
             value: "False"
         wait_for_ip_address: no
-    register: deploy_vm
+    register: vm_deploy
   - name: Set VM CPU Reservation
     vmware_guest:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
       password: "{{ vcenter_password }}"
-      datacenter: "{{ datacenter_name }}"
-      cluster: "{{ cluster_name }}"
+      datacenter: "{{ vm_datacenter }}"
+      cluster: "{{ vm_cluster }}"
       validate_certs: no
-      folder: "{{ folder_root }}"
-      uuid: '{{ deploy_vm.instance.hw_product_uuid }}'
+      folder: "{{ vm_folder }}"
+      uuid: '{{ vm_deploy.instance.hw_product_uuid }}'
       hardware:
-        cpu_reservation: "{{ (deploy_vm.instance.hw_processor_count *  256)  | int }}"
+        cpu_reservation: "{{ (vm_deploy.instance.hw_processor_count *  256)  | int }}"
       wait_for_ip_address: no
   - name: Set VM RAM Reservation
     vmware_guest:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
       password: "{{ vcenter_password }}"
-      datacenter: "{{ datacenter_name }}"
-      cluster: "{{ cluster_name }}"
+      datacenter: "{{ vm_datacenter }}"
+      cluster: "{{ vm_cluster }}"
       validate_certs: no
-      folder: "{{ folder_root }}"
-      uuid: '{{ deploy_vm.instance.hw_product_uuid }}'
+      folder: "{{ vm_folder }}"
+      uuid: '{{ vm_deploy.instance.hw_product_uuid }}'
       hardware:
-        memory_reservation: "{{ (deploy_vm.instance.hw_memtotal_mb / 2)  | int }}"
+        memory_reservation: "{{ (vm_deploy.instance.hw_memtotal_mb / 2)  | int }}"
       wait_for_ip_address: no
-  - name: Change virtual machine's boot order and related parameters
+  - name: Enable SecureBoot
     vmware_guest_boot_manager:
       hostname: "{{ vcenter_hostname }}"
       username: "{{ vcenter_username }}"
       password: "{{ vcenter_password }}"
       validate_certs: no
-      uuid: '{{ deploy_vm.instance.hw_product_uuid }}'
+      uuid: '{{ vm_deploy.instance.hw_product_uuid }}'
       secure_boot_enabled: True
-    register: vm_boot_order
