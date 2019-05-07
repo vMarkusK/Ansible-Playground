@@ -1,15 +1,16 @@
 - name: Create a VM with security configuration
   hosts: localhost
   gather_facts: no
+  vars:
+    vm_datacenter: lab
+    vm_cluster: cluster01
+    vm_folder: /lab/vm/
+    vm_name: test_vm_01
+    vm_cpu: 1
+    vm_mem: 256
+    vm_datastore: datastore1
+    network_name: DPortGroup1
   tasks:
-  - name: Define Facts
-    set_fact:
-        vm_datacenter: lab
-        vm_cluster: cluster01
-        vm_folder: /lab/vm/
-        vm_name: test_vm_01
-        vm_datastore: datastore1
-        network_name: DPortGroup1
   - name: Check for exisiting VM with same name 
     vmware_guest_facts:
       hostname: "{{ vcenter_hostname }}"
@@ -39,10 +40,10 @@
         disk:
           - size_gb: 10
         hardware:
-            memory_mb: 256
-            memory_reservation: 128
-            num_cpus: 1
-            cpu_reservation: 128
+            memory_mb: "{{ vm_mem }}"
+            memory_reservation: "{{ (vm_mem / 2) | int }}"
+            num_cpus: "{{ vm_cpu }}"
+            cpu_reservation: "{{ (vm_cpu * 256) | int }}"
             scsi: paravirtual
             boot_firmware: efi
         networks:
