@@ -9,7 +9,7 @@
     vm_cpu: 1
     vm_mem: 256
     vm_datastore: datastore1
-    network_name: DPortGroup1
+    vm_network: DPortGroup1
   tasks:
   - name: Check for exisiting VM with same name 
     vmware_guest_facts:
@@ -47,8 +47,8 @@
             scsi: paravirtual
             boot_firmware: efi
         networks:
-          - name: "{{ network_name }}"
-            device_type: "vmxnet3"
+          - name: "{{ vm_network }}"
+            device_type: vmxnet3
         customvalues:
           - key: "isolation.tools.copy.disable"
             value: "True"
