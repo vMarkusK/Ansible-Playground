@@ -40,7 +40,9 @@
           - size_gb: 10
         hardware:
             memory_mb: 256
+            memory_reservation: 128
             num_cpus: 1
+            cpu_reservation: 128
             scsi: paravirtual
             boot_firmware: efi
         networks:
@@ -65,32 +67,6 @@
             value: "False"
         wait_for_ip_address: no
     register: vm_deploy
-  - name: Set VM CPU Reservation for {{ vm_name }}
-    vmware_guest:
-      hostname: "{{ vcenter_hostname }}"
-      username: "{{ vcenter_username }}"
-      password: "{{ vcenter_password }}"
-      datacenter: "{{ vm_datacenter }}"
-      cluster: "{{ vm_cluster }}"
-      validate_certs: no
-      folder: "{{ vm_folder }}"
-      uuid: '{{ vm_deploy.instance.hw_product_uuid }}'
-      hardware:
-        cpu_reservation: "{{ (vm_deploy.instance.hw_processor_count *  256)  | int }}"
-      wait_for_ip_address: no
-  - name: Set VM RAM Reservation for {{ vm_name }}
-    vmware_guest:
-      hostname: "{{ vcenter_hostname }}"
-      username: "{{ vcenter_username }}"
-      password: "{{ vcenter_password }}"
-      datacenter: "{{ vm_datacenter }}"
-      cluster: "{{ vm_cluster }}"
-      validate_certs: no
-      folder: "{{ vm_folder }}"
-      uuid: '{{ vm_deploy.instance.hw_product_uuid }}'
-      hardware:
-        memory_reservation: "{{ (vm_deploy.instance.hw_memtotal_mb / 2)  | int }}"
-      wait_for_ip_address: no
   - name: Enable UEFI SecureBoot for {{ vm_name }}
     vmware_guest_boot_manager:
       hostname: "{{ vcenter_hostname }}"
