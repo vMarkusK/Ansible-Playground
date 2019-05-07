@@ -4,7 +4,7 @@
   vars:
     vm_datacenter: lab
     vm_cluster: cluster01
-    vm_folder: /lab/vm/
+    vm_folder: /{{ vm_datacenter }}/vm/
     vm_name: test_vm_01
     vm_cpu: 1
     vm_mem: 256
