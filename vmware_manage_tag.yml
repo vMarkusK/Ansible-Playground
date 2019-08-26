@@ -1,0 +1,50 @@
+- name: Manage vSphere VM Tags
+  hosts: localhost
+  gather_facts: no
+  vars:
+    #tag_category: Protection
+    #tag_name: Default
+    #vm_datacenter: lab
+    #vm_cluster: cluster01
+    #vm_folder: /{{ vm_datacenter }}/vm/Ansible
+    vm_list:  
+      - { vm: 'vm01', type: 'VirtualMachine', category: 'Protection', tag: 'Default' }
+      - { vm: 'vm02', type: 'VirtualMachine', category: 'Protection', tag: 'Default' }
+  tasks:
+    - name: Add Tag
+      vmware_tag_manager:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        validate_certs: no
+        tag_names:
+          - "{{ item.category }}:{{ item.tag}}"
+        object_name: "{{ item.vm }}"
+        object_type: "{{ item.type }}"
+        state: add
+      with_items:  "{{ vm_list }}"
+      register: tag_return
+      tags: add
+    - debug:
+        msg: "{{ item }}"
+      with_items: "{{ tag_return.results }}"
+      tags: debug
+    - name: Remove Tag
+      vmware_tag_manager:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        validate_certs: no
+        tag_names:
+          - "{{ item.category }}:{{ item.tag}}"
+        object_name: "{{ item.vm }}"
+        object_type: "{{ item.type }}"
+        state: remove
+      with_items:  "{{ vm_list }}"
+      register: tag_return
+      tags: remove
+    - debug:
+        msg: "{{ item }}"
+      with_items: "{{ tag_return.results }}"
+      tags: debug
+      

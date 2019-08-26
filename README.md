@@ -16,3 +16,8 @@ Playbook: [vmware_create_vm_secure.yml](./vmware_create_vm_secure.yml)
 
 ![vmware_create_vm_secure](/media/vmware_create_vm_secure.png)
 
+### Manage vSphere VM Tags
+
+Playbook: [vmware_manage_tag.yml](./vmware_manage_tag.yml)
+
+![vmware_manage_tag](/media/vmware_manage_tag.png)
