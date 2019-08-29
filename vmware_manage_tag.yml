@@ -2,16 +2,33 @@
   hosts: localhost
   gather_facts: no
   vars:
-    #tag_category: Protection
-    #tag_name: Default
+    tag_category: Protection
+    tag_name: App01
     #vm_datacenter: lab
     #vm_cluster: cluster01
     #vm_folder: /{{ vm_datacenter }}/vm/Ansible
     vm_list:  
-      - { vm: 'vm01', type: 'VirtualMachine', category: 'Protection', tag: 'Default' }
-      - { vm: 'vm02', type: 'VirtualMachine', category: 'Protection', tag: 'Default' }
+      - { vm: 'vm01', type: 'VirtualMachine', category: '{{ tag_category }}', tag: '{{ tag_name }}' }
+      - { vm: 'vm02', type: 'VirtualMachine', category: '{{ tag_category }}', tag: '{{ tag_name }}'}
   tasks:
-    - name: Add Tag
+    - name: Get category id from the given tag
+      vmware_tag_facts:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        validate_certs: no
+      register: tag_details
+      tags: debug
+    - name: Create Tag for '{{ tag_name }}'
+      vmware_tag:
+        hostname: '{{ vcenter_hostname }}'
+        username: '{{ vcenter_username }}'
+        password: '{{ vcenter_password }}'
+        validate_certs: no
+        category_id: "{{ tag_details.tag_facts['Default']['tag_category_id'] }}"
+        tag_name: '{{ tag_name }}'
+        state: present
+    - name: Add Tag '{{ tag_name }}' to VMs
       vmware_tag_manager:
         hostname: '{{ vcenter_hostname }}'
         username: '{{ vcenter_username }}'
