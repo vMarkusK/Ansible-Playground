@@ -39,7 +39,7 @@ notes:
     - "   Resource > Assign Virtual Machine to Resource Pool"
     - "Module may require additional privileges as well, which may be required for gathering facts - e.g. ESXi configurations."
     - Tested on vSphere 5.5, 6.0, 6.5 and 6.7
-    - Use SCSI disks instead of IDE when you want to expand online disks by specifing a SCSI controller
+    - Use SCSI disks instead of IDE when you want to expand online disks by specifying a SCSI controller
     - "For additional information please visit Ansible VMware community wiki - U(https://github.com/ansible/community/wiki/VMware)."
 options:
   state:
@@ -163,7 +163,7 @@ options:
     - This parameter is case sensitive.
     - 'Examples:'
     - "  virtual machine with RHEL7 64 bit, will be 'rhel7_64Guest'"
-    - "  virtual machine with CensOS 64 bit, will be 'centos64Guest'"
+    - "  virtual machine with CentOS 64 bit, will be 'centos64Guest'"
     - "  virtual machine with Ubuntu 64 bit, will be 'ubuntu64Guest'"
     - This field is required when creating a virtual machine.
     - >
@@ -281,7 +281,7 @@ options:
     description:
     - A list of networks (in the order of the NICs).
     - Removing NICs is not allowed, while reconfiguring the virtual machine.
-    - All parameters and VMware object names are case sensetive.
+    - All parameters and VMware object names are case sensitive.
     - 'One of the below parameters is required per entry:'
     - ' - C(name) (string): Name of the portgroup or distributed virtual portgroup for this interface.
           When specifying distributed virtual portgroup make sure given C(esxi_hostname) or C(cluster) is associated with it.'
@@ -746,7 +746,7 @@ class PyVmomiDeviceHelper(object):
         """
         Function to return int value for given input, else return error
         Args:
-            input_value: Input value to retrive int value from
+            input_value: Input value to retrieve int value from
             name:  Name of the Input value (used to build error message)
         Returns: (int) if integer value can be obtained, otherwise will send a error message.
         """
@@ -842,7 +842,6 @@ class PyVmomiHelper(PyVmomi):
         super(PyVmomiHelper, self).__init__(module)
         self.device_helper = PyVmomiDeviceHelper(self.module)
         self.configspec = None
-        self.relospec = None
         self.change_detected = False  # a change was detected and needs to be applied through reconfiguration
         self.change_applied = False   # a change was applied meaning at least one task succeeded
         self.customspec = None
@@ -898,9 +897,10 @@ class PyVmomiHelper(PyVmomi):
                 memory_allocation.limit = mem_limit
                 if vm_obj is None or memory_allocation.limit != vm_obj.config.memoryAllocation.limit:
                     rai_change_detected = True
-
             if 'mem_reservation' in self.params['hardware'] or 'memory_reservation' in self.params['hardware']:
-                mem_reservation = self.params['hardware'].get('mem_reservation') or self.params['hardware'].get('memory_reservation') or None
+                mem_reservation = self.params['hardware'].get('mem_reservation')
+                if mem_reservation is None:
+                    mem_reservation = self.params['hardware'].get('memory_reservation')
                 try:
                     mem_reservation = int(mem_reservation)
                 except ValueError:
@@ -1094,7 +1094,7 @@ class PyVmomiHelper(PyVmomi):
             if 'max_connections' in self.params['hardware']:
                 # maxMksConnections == max_connections
                 self.configspec.maxMksConnections = int(self.params['hardware']['max_connections'])
-                if vm_obj is None or self.configspec.maxMksConnections != vm_obj.config.hardware.maxMksConnections:
+                if vm_obj is None or self.configspec.maxMksConnections != vm_obj.config.maxMksConnections:
                     self.change_detected = True
 
             if 'nested_virt' in self.params['hardware']:
@@ -1382,7 +1382,6 @@ class PyVmomiHelper(PyVmomi):
                 nic.device.backing.opaqueNetworkType = 'nsx.LogicalSwitch'
                 nic.device.backing.opaqueNetworkId = network_id
                 nic.device.deviceInfo.summary = 'nsx.LogicalSwitch: %s' % network_id
-                nic_change_detected = True
             else:
                 # vSwitch
                 if not isinstance(nic.device.backing, vim.vm.device.VirtualEthernetCard.NetworkBackingInfo):
@@ -1399,13 +1398,7 @@ class PyVmomiHelper(PyVmomi):
                     nic_change_detected = True
 
             if nic_change_detected:
-                # Change to fix the issue found while configuring opaque network
-                # VMs cloned from a template with opaque network will get disconnected
-                # Replacing deprecated config parameter with relocation Spec
-                if isinstance(self.cache.get_network(network_name), vim.OpaqueNetwork):
-                    self.relospec.deviceChange.append(nic)
-                else:
-                    self.configspec.deviceChange.append(nic)
+                self.configspec.deviceChange.append(nic)
                 self.change_detected = True
 
     def configure_vapp_properties(self, vm_obj):
@@ -1418,51 +1411,84 @@ class PyVmomiHelper(PyVmomi):
 
         new_vmconfig_spec = vim.vApp.VmConfigSpec()
 
-        # This is primarily for vcsim/integration tests, unset vAppConfig was not seen on my deployments
-        orig_spec = vm_obj.config.vAppConfig if vm_obj.config.vAppConfig else new_vmconfig_spec
+        if vm_obj:
+            # VM exists
+            # This is primarily for vcsim/integration tests, unset vAppConfig was not seen on my deployments
+            orig_spec = vm_obj.config.vAppConfig if vm_obj.config.vAppConfig else new_vmconfig_spec
 
-        vapp_properties_current = dict((x.id, x) for x in orig_spec.property)
-        vapp_properties_to_change = dict((x['id'], x) for x in self.params['vapp_properties'])
+            vapp_properties_current = dict((x.id, x) for x in orig_spec.property)
+            vapp_properties_to_change = dict((x['id'], x) for x in self.params['vapp_properties'])
 
-        # each property must have a unique key
-        # init key counter with max value + 1
-        all_keys = [x.key for x in orig_spec.property]
-        new_property_index = max(all_keys) + 1 if all_keys else 0
+            # each property must have a unique key
+            # init key counter with max value + 1
+            all_keys = [x.key for x in orig_spec.property]
+            new_property_index = max(all_keys) + 1 if all_keys else 0
 
-        for property_id, property_spec in vapp_properties_to_change.items():
-            is_property_changed = False
-            new_vapp_property_spec = vim.vApp.PropertySpec()
+            for property_id, property_spec in vapp_properties_to_change.items():
+                is_property_changed = False
+                new_vapp_property_spec = vim.vApp.PropertySpec()
 
-            if property_id in vapp_properties_current:
-                if property_spec.get('operation') == 'remove':
-                    new_vapp_property_spec.operation = 'remove'
-                    new_vapp_property_spec.removeKey = vapp_properties_current[property_id].key
-                    is_property_changed = True
+                if property_id in vapp_properties_current:
+                    if property_spec.get('operation') == 'remove':
+                        new_vapp_property_spec.operation = 'remove'
+                        new_vapp_property_spec.removeKey = vapp_properties_current[property_id].key
+                        is_property_changed = True
+                    else:
+                        # this is 'edit' branch
+                        new_vapp_property_spec.operation = 'edit'
+                        new_vapp_property_spec.info = vapp_properties_current[property_id]
+                        try:
+                            for property_name, property_value in property_spec.items():
+
+                                if property_name == 'operation':
+                                    # operation is not an info object property
+                                    # if set to anything other than 'remove' we don't fail
+                                    continue
+
+                                # Updating attributes only if needed
+                                if getattr(new_vapp_property_spec.info, property_name) != property_value:
+                                    setattr(new_vapp_property_spec.info, property_name, property_value)
+                                    is_property_changed = True
+
+                        except Exception as e:
+                            msg = "Failed to set vApp property field='%s' and value='%s'. Error: %s" % (property_name, property_value, to_text(e))
+                            self.module.fail_json(msg=msg)
                 else:
-                    # this is 'edit' branch
-                    new_vapp_property_spec.operation = 'edit'
-                    new_vapp_property_spec.info = vapp_properties_current[property_id]
-                    try:
-                        for property_name, property_value in property_spec.items():
+                    if property_spec.get('operation') == 'remove':
+                        # attempt to delete non-existent property
+                        continue
 
-                            if property_name == 'operation':
-                                # operation is not an info object property
-                                # if set to anything other than 'remove' we don't fail
-                                continue
+                    # this is add new property branch
+                    new_vapp_property_spec.operation = 'add'
 
-                            # Updating attributes only if needed
-                            if getattr(new_vapp_property_spec.info, property_name) != property_value:
-                                setattr(new_vapp_property_spec.info, property_name, property_value)
-                                is_property_changed = True
+                    property_info = vim.vApp.PropertyInfo()
+                    property_info.classId = property_spec.get('classId')
+                    property_info.instanceId = property_spec.get('instanceId')
+                    property_info.id = property_spec.get('id')
+                    property_info.category = property_spec.get('category')
+                    property_info.label = property_spec.get('label')
+                    property_info.type = property_spec.get('type', 'string')
+                    property_info.userConfigurable = property_spec.get('userConfigurable', True)
+                    property_info.defaultValue = property_spec.get('defaultValue')
+                    property_info.value = property_spec.get('value', '')
+                    property_info.description = property_spec.get('description')
 
-                    except Exception as e:
-                        self.module.fail_json(msg="Failed to set vApp property field='%s' and value='%s'. Error: %s"
-                                              % (property_name, property_value, to_text(e)))
-            else:
-                if property_spec.get('operation') == 'remove':
-                    # attemp to delete non-existent property
-                    continue
+                    new_vapp_property_spec.info = property_info
+                    new_vapp_property_spec.info.key = new_property_index
+                    new_property_index += 1
+                    is_property_changed = True
 
+                if is_property_changed:
+                    new_vmconfig_spec.property.append(new_vapp_property_spec)
+        else:
+            # New VM
+            all_keys = [x.key for x in new_vmconfig_spec.property]
+            new_property_index = max(all_keys) + 1 if all_keys else 0
+            vapp_properties_to_change = dict((x['id'], x) for x in self.params['vapp_properties'])
+            is_property_changed = False
+
+            for property_id, property_spec in vapp_properties_to_change.items():
+                new_vapp_property_spec = vim.vApp.PropertySpec()
                 # this is add new property branch
                 new_vapp_property_spec.operation = 'add'
 
@@ -1482,8 +1508,10 @@ class PyVmomiHelper(PyVmomi):
                 new_vapp_property_spec.info.key = new_property_index
                 new_property_index += 1
                 is_property_changed = True
-            if is_property_changed:
-                new_vmconfig_spec.property.append(new_vapp_property_spec)
+
+                if is_property_changed:
+                    new_vmconfig_spec.property.append(new_vapp_property_spec)
+
         if new_vmconfig_spec.property:
             self.configspec.vAppConfig = new_vmconfig_spec
             self.change_detected = True
@@ -1588,7 +1616,8 @@ class PyVmomiHelper(PyVmomi):
             # Setting hostName, orgName and fullName is mandatory, so we set some default when missing
             ident.userData.computerName = vim.vm.customization.FixedName()
             # computer name will be truncated to 15 characters if using VM name
-            default_name = self.params['name'].translate(None, string.punctuation)
+            default_name = self.params['name'].replace(' ', '')
+            default_name = ''.join([c for c in default_name if c not in string.punctuation])
             ident.userData.computerName.name = str(self.params['customization'].get('hostname', default_name[0:15]))
             ident.userData.fullName = str(self.params['customization'].get('fullname', 'Administrator'))
             ident.userData.orgName = str(self.params['customization'].get('orgname', 'ACME'))
@@ -1812,7 +1841,9 @@ class PyVmomiHelper(PyVmomi):
                 continue
             elif vm_obj is None or self.params['template']:
                 # We are creating new VM or from Template
-                diskspec.fileOperation = vim.vm.device.VirtualDeviceSpec.FileOperation.create
+                # Only create virtual device if not backed by vmdk in original template
+                if diskspec.device.backing.fileName == '':
+                    diskspec.fileOperation = vim.vm.device.VirtualDeviceSpec.FileOperation.create
 
             # which datastore?
             if expected_disk_spec.get('datastore'):
@@ -2135,13 +2166,11 @@ class PyVmomiHelper(PyVmomi):
 
         self.configspec = vim.vm.ConfigSpec()
         self.configspec.deviceChange = []
-        # create the relocation spec
-        self.relospec = vim.vm.RelocateSpec()
-        self.relospec.deviceChange = []
         self.configure_guestid(vm_obj=vm_obj, vm_creation=True)
         self.configure_cpu_and_memory(vm_obj=vm_obj, vm_creation=True)
         self.configure_hardware_params(vm_obj=vm_obj)
         self.configure_resource_alloc_info(vm_obj=vm_obj)
+        self.configure_vapp_properties(vm_obj=vm_obj)
         self.configure_disks(vm_obj=vm_obj)
         self.configure_network(vm_obj=vm_obj)
         self.configure_cdrom(vm_obj=vm_obj)
@@ -2162,10 +2191,13 @@ class PyVmomiHelper(PyVmomi):
         clone_method = None
         try:
             if self.params['template']:
+                # create the relocation spec
+                relospec = vim.vm.RelocateSpec()
+
                 # Only select specific host when ESXi hostname is provided
                 if self.params['esxi_hostname']:
-                    self.relospec.host = self.select_host()
-                self.relospec.datastore = datastore
+                    relospec.host = self.select_host()
+                relospec.datastore = datastore
 
                 # Convert disk present in template if is set
                 if self.params['convert']:
@@ -2181,22 +2213,22 @@ class PyVmomiHelper(PyVmomi):
                                 disk_locator.diskBackingInfo.diskMode = "persistent"
                             disk_locator.diskId = device.key
                             disk_locator.datastore = datastore
-                            self.relospec.disk.append(disk_locator)
+                            relospec.disk.append(disk_locator)
 
                 # https://www.vmware.com/support/developer/vc-sdk/visdk41pubs/ApiReference/vim.vm.RelocateSpec.html
                 # > pool: For a clone operation from a template to a virtual machine, this argument is required.
-                self.relospec.pool = resource_pool
+                relospec.pool = resource_pool
 
                 linked_clone = self.params.get('linked_clone')
                 snapshot_src = self.params.get('snapshot_src', None)
                 if linked_clone:
                     if snapshot_src is not None:
-                        self.relospec.diskMoveType = vim.vm.RelocateSpec.DiskMoveOptions.createNewChildDiskBacking
+                        relospec.diskMoveType = vim.vm.RelocateSpec.DiskMoveOptions.createNewChildDiskBacking
                     else:
                         self.module.fail_json(msg="Parameter 'linked_src' and 'snapshot_src' are"
                                                   " required together for linked clone operation.")
 
-                clonespec = vim.vm.CloneSpec(template=self.params['is_template'], location=self.relospec)
+                clonespec = vim.vm.CloneSpec(template=self.params['is_template'], location=relospec)
                 if self.customspec:
                     clonespec.customization = self.customspec
 
@@ -2306,9 +2338,7 @@ class PyVmomiHelper(PyVmomi):
     def reconfigure_vm(self):
         self.configspec = vim.vm.ConfigSpec()
         self.configspec.deviceChange = []
-        # create the relocation spec
-        self.relospec = vim.vm.RelocateSpec()
-        self.relospec.deviceChange = []
+
         self.configure_guestid(vm_obj=self.current_vm_obj)
         self.configure_cpu_and_memory(vm_obj=self.current_vm_obj)
         self.configure_hardware_params(vm_obj=self.current_vm_obj)
@@ -2323,11 +2353,12 @@ class PyVmomiHelper(PyVmomi):
             self.configspec.annotation = str(self.params['annotation'])
             self.change_detected = True
 
+        relospec = vim.vm.RelocateSpec()
         if self.params['resource_pool']:
-            self.relospec.pool = self.get_resource_pool()
+            relospec.pool = self.get_resource_pool()
 
-            if self.relospec.pool != self.current_vm_obj.resourcePool:
-                task = self.current_vm_obj.RelocateVM_Task(spec=self.relospec)
+            if relospec.pool != self.current_vm_obj.resourcePool:
+                task = self.current_vm_obj.RelocateVM_Task(spec=relospec)
                 self.wait_for_task(task)
                 if task.info.state == 'error':
                     return {'changed': self.change_applied, 'failed': True, 'msg': task.info.error.msg, 'op': 'relocate'}
