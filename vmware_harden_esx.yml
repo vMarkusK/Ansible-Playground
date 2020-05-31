@@ -1,6 +1,6 @@
 - name: Harden ESXi Host
-  gather_info: no
   hosts: localhost
+  gather_facts: false
   strategy: free
   vars:
     cluster_name: "cluster01" 
@@ -111,7 +111,7 @@
         cluster_name: "{{ cluster_name }}"   
         validate_certs: no      
         rules:
-        - name: ntp
+        - name: ntpClient
           enabled: True
           allowed_hosts:
             all_ip: False
@@ -126,7 +126,6 @@
         password: "{{ vcenter_password }}"
         cluster_name: "{{ cluster_name }}"
         validate_certs: no   
-        state: present
         ntp_servers:
         - 192.168.20.10
         - 192.168.20.11
