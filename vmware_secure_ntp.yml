@@ -20,6 +20,7 @@
     - name: Debug NTP Service
       debug:
         var: host_services | json_query(host_services_query)
+      tags: debug
     - name: Get Firewall Rules
       vmware_host_firewall_info:
         hostname: "{{ esxi_hostname }}"
@@ -32,6 +33,7 @@
     - name: Debug Firewall Rules
       debug:
         var: host_firewall | json_query(host_firewall_query)
+      tags: debug
     - name: Get NTP Config
       vmware_host_ntp_info:
         hostname: "{{ esxi_hostname }}"
@@ -44,6 +46,7 @@
     - name: Debug NTP Config
       debug:
         var: host_ntp.hosts_ntp_info
+      tags: debug
     - name: Set NTP Service
       vmware_host_service_manager:
         hostname: "{{ esxi_hostname }}"
@@ -68,8 +71,8 @@
           allowed_hosts:
             all_ip: False
             ip_address:
-            - 192.168.2.10
-            - 192.168.2.11
+            - 192.168.20.10
+            - 192.168.20.11
       tags: ntp  
     - name: Set NTP servers
       vmware_host_ntp:
@@ -79,7 +82,7 @@
         esxi_hostname: "{{ esxi_hostname}}"
         validate_certs: no  
         ntp_servers:
-        - 192.168.2.10
-        - 192.168.2.11
+        - 192.168.20.10
+        - 192.168.20.11
       tags: ntp 
 
