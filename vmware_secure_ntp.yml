@@ -1,0 +1,85 @@
+- name: Secure ESXi Host NTP Service and enforce NTP Servers
+  hosts: localhost
+  gather_facts: false
+  strategy: free
+  vars:
+    #cluster_name: "cluster01" 
+    esxi_hostname: "192.168.234.102"
+    host_services_query: "host_service_info.*[?key=='ntpd']"
+    host_firewall_query: "hosts_firewall_info.*[?key=='ntpClient']"
+  tasks:
+    - name: Get Services
+      vmware_host_service_info:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname}}" 
+        validate_certs: no
+      register: host_services
+      tags: debug
+    - name: Debug NTP Service
+      debug:
+        var: host_services | json_query(host_services_query)
+    - name: Get Firewall Rules
+      vmware_host_firewall_info:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname}}" 
+        validate_certs: no
+      register: host_firewall
+      tags: debug
+    - name: Debug Firewall Rules
+      debug:
+        var: host_firewall | json_query(host_firewall_query)
+    - name: Get NTP Config
+      vmware_host_ntp_info:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname }}"
+        validate_certs: no
+      register: host_ntp
+      tags: debug
+    - name: Debug NTP Config
+      debug:
+        var: host_ntp.hosts_ntp_info
+    - name: Set NTP Service
+      vmware_host_service_manager:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname}}" 
+        validate_certs: no
+        service_name: ntpd
+        state: present
+        service_policy: on 
+      tags: ntp  
+    - name: Manage NTP Firewall Rules
+      vmware_host_firewall_manager:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname}}"   
+        validate_certs: no
+        rules:
+        - name: ntpClient
+          enabled: True
+          allowed_hosts:
+            all_ip: False
+            ip_address:
+            - 192.168.2.10
+            - 192.168.2.11
+      tags: ntp  
+    - name: Set NTP servers
+      vmware_host_ntp:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname}}"
+        validate_certs: no  
+        ntp_servers:
+        - 192.168.2.10
+        - 192.168.2.11
+      tags: ntp 
+
