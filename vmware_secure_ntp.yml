@@ -47,17 +47,6 @@
       debug:
         var: host_ntp.hosts_ntp_info
       tags: debug
-    - name: Set NTP Service
-      vmware_host_service_manager:
-        hostname: "{{ esxi_hostname }}"
-        username: "{{ esxi_username }}"
-        password: "{{ esxi_password }}"
-        esxi_hostname: "{{ esxi_hostname}}" 
-        validate_certs: no
-        service_name: ntpd
-        state: present
-        service_policy: on 
-      tags: ntp  
     - name: Manage NTP Firewall Rules
       vmware_host_firewall_manager:
         hostname: "{{ esxi_hostname }}"
@@ -85,4 +74,15 @@
         - 192.168.20.10
         - 192.168.20.11
       tags: ntp 
+    - name: Set NTP Service
+      vmware_host_service_manager:
+        hostname: "{{ esxi_hostname }}"
+        username: "{{ esxi_username }}"
+        password: "{{ esxi_password }}"
+        esxi_hostname: "{{ esxi_hostname}}" 
+        validate_certs: no
+        service_name: ntpd
+        state: present
+        service_policy: on 
+      tags: ntp  
 
