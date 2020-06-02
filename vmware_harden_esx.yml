@@ -48,17 +48,6 @@
             "DCUI.Access": "root"
             "Net.BlockGuestBPDU": 1
             "Config.HostAgent.plugins.solo.enableMob": false
-    - name: Set NTP Service
-      vmware_host_service_manager:
-        hostname: "{{ vcenter_hostname }}"
-        username: "{{ vcenter_username }}"
-        password: "{{ vcenter_password }}"
-        cluster_name: "{{ cluster_name }}" 
-        validate_certs: no
-        service_name: ntpd
-        state: present
-        service_policy: on 
-      tags: ntp  
     - name: Set SSH Service
       vmware_host_service_manager:
         hostname: "{{ vcenter_hostname }}"
@@ -130,5 +119,16 @@
         - 192.168.20.10
         - 192.168.20.11
       tags: ntp 
+    - name: Set NTP Service
+      vmware_host_service_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}" 
+        validate_certs: no
+        service_name: ntpd
+        state: present
+        service_policy: on 
+      tags: ntp  
 
 
