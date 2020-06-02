@@ -1,0 +1,87 @@
+- name: Secure ESXi Host NTP Service and enforce NTP Servers
+  hosts: localhost
+  gather_facts: false
+  strategy: free
+  vars:
+    cluster_name: "cluster01" 
+    host_services_query: "host_service_info.*[?key=='ntpd']"
+    host_firewall_query: "hosts_firewall_info.*[?key=='ntpClient']"
+  tasks:
+    - name: Get Services
+      vmware_host_service_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}"
+        validate_certs: no
+      register: host_services
+      tags: debug
+    - name: Debug NTP Service
+      debug:
+        var: host_services | json_query(host_services_query)
+      tags: debug
+    - name: Get Firewall Rules
+      vmware_host_firewall_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}"
+        validate_certs: no
+      register: host_firewall
+      tags: debug
+    - name: Debug Firewall Rules
+      debug:
+        var: host_firewall | json_query(host_firewall_query)
+      tags: debug
+    - name: Get NTP Config
+      vmware_host_ntp_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}"
+        validate_certs: no
+      register: host_ntp
+      tags: debug
+    - name: Debug NTP Config
+      debug:
+        var: host_ntp.hosts_ntp_info
+      tags: debug
+    - name: Manage NTP Firewall Rules
+      vmware_host_firewall_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}"  
+        validate_certs: no
+        rules:
+        - name: ntpClient
+          enabled: True
+          allowed_hosts:
+            all_ip: False
+            ip_address:
+            - 192.168.20.10
+            - 192.168.20.11
+      tags: ntp  
+    - name: Set NTP servers
+      vmware_host_ntp:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}"
+        validate_certs: no  
+        ntp_servers:
+        - 192.168.20.10
+        - 192.168.20.11
+      tags: ntp 
+    - name: Set NTP Service
+      vmware_host_service_manager:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        cluster_name: "{{ cluster_name }}"
+        validate_certs: no
+        service_name: ntpd
+        state: start
+        service_policy: on 
+      tags: ntp  
+
