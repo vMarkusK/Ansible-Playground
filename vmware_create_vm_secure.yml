@@ -21,7 +21,8 @@
       name: "{{ vm_name }}"
     ignore_errors: True
     register: vm_find
-  - fail:
+  - name: Fail if VM already exists
+    fail:
       msg: "The VM already exists."
     when: vm_find is succeeded 
   - name: Create new VM - {{ vm_name }}
