@@ -35,7 +35,7 @@
         password: '{{ vcenter_password }}'
         validate_certs: no
         tag_names:
-          - "{{ item.category }}:{{ item.tag}}"
+          - "{{ item.category }}:{{ item.tag }}"
         object_name: "{{ item.vm }}"
         object_type: "{{ item.type }}"
         state: add
@@ -53,7 +53,7 @@
         password: '{{ vcenter_password }}'
         validate_certs: no
         tag_names:
-          - "{{ item.category }}:{{ item.tag}}"
+          - "{{ item.category }}:{{ item.tag }}"
         object_name: "{{ item.vm }}"
         object_type: "{{ item.type }}"
         state: remove

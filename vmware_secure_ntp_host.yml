@@ -13,7 +13,7 @@
         hostname: "{{ esxi_hostname }}"
         username: "{{ esxi_username }}"
         password: "{{ esxi_password }}"
-        esxi_hostname: "{{ esxi_hostname}}" 
+        esxi_hostname: "{{ esxi_hostname }}" 
         validate_certs: no
       register: host_services
       tags: debug
@@ -26,7 +26,7 @@
         hostname: "{{ esxi_hostname }}"
         username: "{{ esxi_username }}"
         password: "{{ esxi_password }}"
-        esxi_hostname: "{{ esxi_hostname}}" 
+        esxi_hostname: "{{ esxi_hostname }}" 
         validate_certs: no
       register: host_firewall
       tags: debug
@@ -52,7 +52,7 @@
         hostname: "{{ esxi_hostname }}"
         username: "{{ esxi_username }}"
         password: "{{ esxi_password }}"
-        esxi_hostname: "{{ esxi_hostname}}"   
+        esxi_hostname: "{{ esxi_hostname }}"   
         validate_certs: no
         rules:
         - name: ntpClient
@@ -68,7 +68,7 @@
         hostname: "{{ esxi_hostname }}"
         username: "{{ esxi_username }}"
         password: "{{ esxi_password }}"
-        esxi_hostname: "{{ esxi_hostname}}"
+        esxi_hostname: "{{ esxi_hostname }}"
         validate_certs: no  
         ntp_servers:
         - 192.168.20.10
@@ -79,7 +79,7 @@
         hostname: "{{ esxi_hostname }}"
         username: "{{ esxi_username }}"
         password: "{{ esxi_password }}"
-        esxi_hostname: "{{ esxi_hostname}}" 
+        esxi_hostname: "{{ esxi_hostname }}" 
         validate_certs: no
         service_name: ntpd
         state: present
