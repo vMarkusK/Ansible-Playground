@@ -1,4 +1,5 @@
 # Ansible Playground
+![Ansible Lint](https://github.com/vMarkusK/Ansible-Playground/workflows/Ansible%20Lint/badge.svg)
 
 ## About
 
