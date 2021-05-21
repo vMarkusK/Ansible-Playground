@@ -1,4 +1,5 @@
 - name: Create Vm and add to DRS Group classic style
+  # https://github.com/ansible-collections/community.vmware/issues/81
   hosts: localhost
   gather_facts: false
   vars:
@@ -9,7 +10,7 @@
     vm_datacenter: DC0
     vm_cluster: DC0_C0
     vm_folder: /{{ vm_datacenter }}/vm/
-    vm_name: test_vm_03
+    vm_name: test_vm_05
     vm_cpu: 1
     vm_mem: 1
     vm_datastore: LocalDS_0
@@ -17,7 +18,7 @@
     vm_group: site01
   tasks:
   - name: Check for existing VM with the same name
-    community.vmware.vmware_guest_facts:
+    community.vmware.vmware_guest_info:
       hostname: "{{ vcsim_hostname }}"
       username: "{{ vcsim_username }}"
       password: "{{ vcsim_password }}"
