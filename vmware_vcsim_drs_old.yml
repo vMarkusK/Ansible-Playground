@@ -1,0 +1,146 @@
+- name: Create Vm and add to DRS Group classic style
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vcsim_username: administrator
+    vcsim_password: REPLACEME
+    vcsim_hostname: 10.0.2.37
+    vcsim_port: 8989
+    vm_datacenter: DC0
+    vm_cluster: DC0_C0
+    vm_folder: /{{ vm_datacenter }}/vm/
+    vm_name: test_vm_03
+    vm_cpu: 1
+    vm_mem: 1
+    vm_datastore: LocalDS_0
+    vm_network: "VM Network"
+    vm_group: site01
+  tasks:
+  - name: Check for existing VM with the same name
+    community.vmware.vmware_guest_facts:
+      hostname: "{{ vcsim_hostname }}"
+      username: "{{ vcsim_username }}"
+      password: "{{ vcsim_password }}"
+      port: "{{ vcsim_port }}"
+      datacenter: "{{ vm_datacenter }}"
+      validate_certs: false
+      name: "{{ vm_name }}"
+    ignore_errors: true
+    register: vm_find
+  - name: Fail if VM already exists
+    fail:
+      msg: "The VM already exists."
+    when: vm_find is succeeded 
+  - name: Create new VM - {{ vm_name }}
+    community.vmware.vmware_guest:
+        hostname: "{{ vcsim_hostname }}"
+        username: "{{ vcsim_username }}"
+        password: "{{ vcsim_password }}"
+        port: "{{ vcsim_port }}"
+        datacenter: "{{ vm_datacenter }}"
+        cluster: "{{ vm_cluster }}"
+        validate_certs: false
+        folder: "{{ vm_folder }}"
+        name: "{{ vm_name }}" 
+        state: poweredoff
+        guest_id: rhel7_64Guest
+        datastore: "{{ vm_datastore }}"
+        disk:
+          - size_gb: 1
+        hardware:
+            memory_mb: "{{ vm_mem }}"
+            memory_reservation: "{{ (vm_mem / 2) | int }}"
+            num_cpus: "{{ vm_cpu }}"
+            cpu_reservation: "{{ (vm_cpu * 256) | int }}"
+            scsi: paravirtual
+            boot_firmware: efi
+        networks:
+          - name: "{{ vm_network }}"
+            device_type: vmxnet3
+        customvalues:
+          - key: "isolation.tools.copy.disable"
+            value: "True"
+          - key: "isolation.tools.paste.disable"
+            value: "True"
+          - key: "isolation.tools.diskShrink.disable"
+            value: "True"
+          - key: "isolation.tools.diskWiper.disable"
+            value: "True"
+          - key: "mks.enable3d"
+            value: "False"
+          - key: "tools.setInfo.sizeLimit"
+            value: "1048576"
+          - key: "RemoteDisplay.vnc.enabled"
+            value: "False"
+          - key: "tools.guestlib.enableHostInfo"
+            value: "False"
+        wait_for_ip_address: no
+    register: vm_deploy
+  - name: Enable UEFI SecureBoot for {{ vm_name }}
+    community.vmware.vmware_guest_boot_manager:
+      hostname: "{{ vcsim_hostname }}"
+      username: "{{ vcsim_username }}"
+      password: "{{ vcsim_password }}"
+      port: "{{ vcsim_port }}"
+      validate_certs: false
+      uuid: '{{ vm_deploy.instance.hw_product_uuid }}'
+      secure_boot_enabled: true
+  - name: Get all DRS VM groups
+    community.vmware.vmware_drs_group_facts:
+        hostname: "{{ vcsim_hostname }}"
+        password: "{{ vcsim_password }}"
+        username: "{{ vcsim_username }}"
+        port: "{{ vcsim_port }}"
+        validate_certs: false
+        datacenter_name: "{{ vm_datacenter }}"
+    register: drs_groups
+  - name: Display DRS Group Object
+    debug:
+      msg: "{{ drs_groups }}"
+  - name: Filter existing VMs from DRS Group Object
+    set_fact: 
+      vmnames: "{{ drs_groups | json_query( vmnames_query ) }}"
+    vars:
+      vmnames_query: 'drs_group_facts.{{ vm_cluster }}[?group_name==`{{ vm_group }}`].vms'
+  - name: Display DRS Group VM List
+    debug:
+      msg: "{{ vmnames[0] }}"
+    when: vmnames | list | count  > 0
+  - name: Display new DRS Group VM List
+    debug:
+      msg: "{{ vmnames[0] + [ vm_name ] }}"
+    when: vmnames | list | count  > 0  
+  - name: Build full VM  List
+    set_fact:
+      all_vmnames: "{{ vmnames[0] + [ vm_name ] }}"
+    when: vmnames | list | count  > 0
+  - name: Add {{ vm_name }} to exiting DRS VM group
+    community.vmware.vmware_drs_group:
+      hostname: "{{ vcsim_hostname }}"
+      password: "{{ vcsim_password }}"
+      username: "{{ vcsim_username }}"
+      port: "{{ vcsim_port }}"
+      validate_certs: false
+      cluster_name: "{{ vm_cluster }}" 
+      datacenter_name: "{{ vm_datacenter }}"
+      group_name: "{{ vm_group }}"
+      vms: "{{ all_vmnames }}"
+      state: present
+    delegate_to: localhost  
+    when: vmnames | list | count > 0
+  - name: Add {{ vm_name }} to new DRS VM group
+    community.vmware.vmware_drs_group:
+      hostname: "{{ vcsim_hostname }}"
+      password: "{{ vcsim_password }}"
+      username: "{{ vcsim_username }}"
+      port: "{{ vcsim_port }}"
+      validate_certs: false
+      cluster_name: "{{ vm_cluster }}"
+      datacenter_name: "{{ vm_datacenter }}"
+      group_name: "{{ vm_group }}"
+      vms:
+        - "{{ vm_name }}"
+      state: present
+    delegate_to: localhost  
+    when: vmnames | list | count == 0
+
